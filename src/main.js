@@ -36,6 +36,7 @@ form.addEventListener('submit', event => {
     galleryContainer.innerHTML = '';
     page = 1; //Виконати запит першої сторінки для нового слова пошуку
     totalImg = 0; //Перед першим запитом = 0
+    document.querySelector('.btn-more-container').style.display = 'none';
     callPixabayAPI();
 });
 
