@@ -24,9 +24,20 @@ button {
   background: #4e75ff;
 }
 
+.btn-more {
+  width: 125px;
+}
+
 input {
   width: 272px;
   height: 40px;
+}
+
+.btn-more-container{
+  display: none;
+  align-items: center;
+  flex-direction: column;
+  column-gap: 10px;
 }
 
 .gallery {
@@ -124,4 +135,8 @@ input {
  display: none;
  align-items: center;
  justify-content: center;
+}
+
+.loader-more{
+  display: none;
 }

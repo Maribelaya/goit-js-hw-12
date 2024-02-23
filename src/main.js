@@ -3,101 +3,98 @@ import iziToast from "izitoast";
 // Додатковий імпорт стилів
 import "izitoast/dist/css/iziToast.min.css";
 
-// Описаний у документації
-import SimpleLightbox from "simplelightbox";
-// Додатковий імпорт стилів
-import "simplelightbox/dist/simple-lightbox.min.css";
-
-
-
+//Іморт функцій
+import { renderGallery } from './js/render-functions';
+import { getImages } from './js/pixabay-api';
 
 const form = document.querySelector ('form');
 const searchInput = document.querySelector ('input');
 const galleryContainer = document.querySelector('.gallery');
 const loaderElem = document.querySelector('.loader-container');
+const loaderMoreElem = document.querySelector('.loader-more');
+const moreBtn = document.querySelector('.btn-more');
 
-const lightbox = new SimpleLightbox('.gallery a', {
-    aptions: true,
-    captionType: 'attr',
-    captionsData: 'alt',
-    captionPosition: 'bottom',
-    fadeSpeed: 150,
-    captionSelector: "img",
-    captionDelay: 250,
-    });       
-    lightbox.on('show.simplelightbox');
+let searchValue = '';
+let page = 1;
+let totalImg = 0;
 
 //Подія відправлення форми
 form.addEventListener('submit', event => {
+    //Спрацьовує як перший запит (запит першої сторінки)
     event.preventDefault();
-    const searchValue = searchInput.value;
+    searchValue = searchInput.value.trim();
+    //Вихід, якщо не вказано умову пошуку
+    if(!searchValue){
+        iziToast.error({
+            timeout: 1000,
+            message: "Please enter a search value",
+            position: 'topRight',
+            });     
+            return;           
+    }
     searchInput.value = '';
-    galleryContainer.innerHTML='';
-    getImages(searchValue);
+    galleryContainer.innerHTML = '';
+    page = 1; //Виконати запит першоъ сторінки для нового слова пошуку
+    totalImg = 0; //Перед першим запитом = 0
+    callPixabayAPI();
 });
 
-//Пошук зображень
-function getImages(searchValue){
+//Подія натискання кнопки
+moreBtn.addEventListener('click', event => {
+    page = page + 1;
+    callPixabayAPI();
+});
+
+async function callPixabayAPI(){
     showLoader(); //Показати лоадер
-    const apiKey = "42469788-7d7013196b534fb1bad6f4ac3";
-    const url = `https://pixabay.com/api/?key=${apiKey}&q=${searchValue}&image_type=photo&orientation=horizontal&safesearch=true`;
-
-    fetch(url)
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            throw new Error(response.status);
-        }
-        
-    })
-
-    .then(data => { //Успішне виконання запиту
-        if (data.hits.length === 0) { //Відcутні зображення
-            iziToast.error({
+    const data = await getImages(searchValue, page);
+    if (data.hits.length === 0){
+        iziToast.error({
             timeout: 1000,
-            // transitionIn: 'fadeInUp',
             message: "Sorry, there are no images matching your search query. Please try again!",
             position: 'topRight',
-        });
+            });
+    }
+    else{
+        //Якщо пошук був для першої сторінки - фіксація кількості зображень
+        if(page == 1) {
+            totalImg = data.totalHits;
         }
-        else {  //Отримано зображення
-            const images = data.hits.
-            map(data => {
-                return `
-                <li class="gallery-item"><a href="${data.largeImageURL}">
-                <img class="gallery-image" src="${data.webformatURL}" alt="${data.tags}"></a>
-                <ul class="gallery-image-data">
-                <li class="data-quantity"><b>Likes </b>${data.likes}</li>
-                <li class="data-quantity"><b>Views </b>${data.views}</li>
-                <li class="data-quantity"><b>Comments </b>${data.comments}</li>
-                <li class="data-quantity"><b>Downloads </b>${data.downloads}</li>
-                </ul>
-                </li>`;
-            }).join('');
 
-            
-            //Відображення на сторінці
-        galleryContainer.insertAdjacentHTML("beforeend", images);
+        renderGallery(data, galleryContainer, page, totalImg);
 
-
-        lightbox.refresh();
+        if(page > 1){
+            const height = galleryContainer.firstElementChild.getBoundingClientRect().height;
+            window.scrollBy({ top: height * 2, behavior: 'smooth' });
         }
-    })
-    .catch(error => {
-        console.log(error); //Помилка виконання запиту
-    })
-    .finally(() => {
-        hideLoader(); //Сховати loader
-    });
+
+        if(page * 15 > totalImg && totalImg > 15){
+            iziToast.info({
+                message: "We're sorry, but you've reached the end of search results.",
+                position: 'topRight',
+                }); 
+       }
+
+    }
+    hideLoader();//Сховати лоадер
 }
 
 function showLoader() {
-    loaderElem.style.display = 'flex';
+    if(page == 1){
+        loaderElem.style.display = 'flex';
+    }
+    else{
+        loaderMoreElem.style.display = 'inline-block';
+    }
 }
 
 function hideLoader() {
-    loaderElem.style.display = 'none';
+    if (page == 1){
+        loaderElem.style.display = 'none';
+    }
+    else{
+        loaderMoreElem.style.display = 'none';
+    }
 }
 
 
