@@ -34,7 +34,7 @@ form.addEventListener('submit', event => {
     }
     searchInput.value = '';
     galleryContainer.innerHTML = '';
-    page = 1; //Виконати запит першоъ сторінки для нового слова пошуку
+    page = 1; //Виконати запит першої сторінки для нового слова пошуку
     totalImg = 0; //Перед першим запитом = 0
     callPixabayAPI();
 });
